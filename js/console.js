@@ -34,6 +34,11 @@ KONSOLE.sys.moveToCommand = function(places) {
 };
 
 KONSOLE.sys.WriteLine = function (toPrint, level, endWithNewLine) { 
+	if(typeof level === "boolean") {
+		endWithNewLine = level;
+		level = undefined;
+	}
+
 	if(level) {
 		switch(level) {
 			case 'info': 
