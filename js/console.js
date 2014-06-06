@@ -44,12 +44,15 @@ KONSOLE.sys.WriteLine = function (toPrint, level, endWithNewLine) {
 			break;
 		}
 	}
+	
+	if(toPrint) {
+		$('.output')[0].innerHTML += "<pre>" + toPrint + "</pre>";
+	}
+
 	if(!toPrint || endWithNewLine) {
 		$('.output')[0].innerHTML += "<br/>";
 	}
-	else {
-		$('.output')[0].innerHTML += "<pre>" + toPrint + "</pre>";
-	}
+
 	window.scrollTo(0, document.body.scrollHeight);
 };
 
