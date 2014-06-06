@@ -30,6 +30,12 @@ var KONSOLE = KONSOLE || new function() {
 	};
 };
 
+KONSOLE.info = {
+	author: "Robert P. White",
+	website: "http://rob.pw",
+	copyright: "Rob.pw, all rights reserved."
+};
+
 function retrieveIP(json){
 	KONSOLE.clientIP = json.ip;
 }

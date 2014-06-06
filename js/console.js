@@ -33,7 +33,7 @@ KONSOLE.sys.moveToCommand = function(places) {
 	this.MoveCursor(this.command.length);
 };
 
-KONSOLE.sys.WriteLine = function (toPrint, level) { 
+KONSOLE.sys.WriteLine = function (toPrint, level, endWithNewLine) { 
 	if(level) {
 		switch(level) {
 			case 'info': 
@@ -44,7 +44,7 @@ KONSOLE.sys.WriteLine = function (toPrint, level) {
 			break;
 		}
 	}
-	if(!toPrint) {
+	if(!toPrint || endWithNewLine) {
 		$('.output')[0].innerHTML += "<br/>";
 	}
 	else {
@@ -147,8 +147,7 @@ KONSOLE.namespace('sys.plugins.info', function() {
 		lib = KONSOLE.sys;
 	}
 	lib.WriteLine("Microsoft Windows [Version 6.2.9200]");
-	lib.WriteLine("(c) 2012 Microsoft Corporation. All rights reserved.");
-	lib.WriteLine();
+	lib.WriteLine("(c) 2012 Microsoft Corporation. All rights reserved.", true);
 });
 
 KONSOLE.sys.plugins.title = function(title) {
@@ -173,8 +172,13 @@ KONSOLE.sys.plugins.help = function() {
 
 KONSOLE.sys.plugins.test = function() {
 	KONSOLE.sys.ReadLine("I will write what you say next.", function(message) {
-		KONSOLE.sys.WriteLine(message, 'info');
+		KONSOLE.sys.WriteLine(message, 'info', true);
 	});
+};
+
+KONSOLE.sys.plugins.about = function() {
+	var sys = KONSOLE.sys;
+	sys.WriteLine(KONSOLE.info.toString(), true);
 };
 
 KONSOLE.sys.plugins.exit = function() {
