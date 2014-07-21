@@ -4,7 +4,7 @@ KONSOLE.sys = {
 		curCommand: 0,
 		commandHistory: [],
 		supressNext: false,
-		blinker: $('div#blinker')[0] || document.getElementById('blinker')
+		blinker: $('div#blinker') || document.getElementById('blinker')
 };
 
 KONSOLE.sys.moveToCommand = function(places) {
@@ -27,13 +27,13 @@ KONSOLE.sys.moveToCommand = function(places) {
 
 	if(gotCommand) {
 		this.command = gotCommand;
-		$('pre.inputText')[0].innerText = this.command;
+		$('pre.inputText').innerText = this.command;
 	}
 
-	this.MoveCursor(this.command.length);
+	this.moveCursor(this.command.length);
 };
 
-KONSOLE.sys.WriteLine = function (toPrint, level, endWithNewLine) { 
+KONSOLE.sys.writeLine = function (toPrint, level, endWithNewLine) { 
 	if(typeof level === "boolean") {
 		endWithNewLine = level;
 		level = undefined;
@@ -43,34 +43,43 @@ KONSOLE.sys.WriteLine = function (toPrint, level, endWithNewLine) {
 		switch(level) {
 			case 'info': 
 				toPrint = "> " + toPrint;
-			break;
+				break;
 			case 'warning':
 				toPrint = "[WARNING]: " + toPrint;
-			break;
+				break;
+			case 'error':
+				toPrint = "[ERROR]: " + toPrint;
+				break;
 		}
 	}
 	
 	if(toPrint) {
-		$('.output')[0].innerHTML += "<pre>" + toPrint + "</pre>";
+		if (typeof toPrint === "object") {
+			toPrint = JSON.stringify(toPrint, null, "\t");
+		}
+
+		$('.output').innerHTML += "<pre>" + toPrint + "</pre>";
 	}
 
 	if(!toPrint || endWithNewLine) {
-		$('.output')[0].innerHTML += "<br/>";
+		$('.output').innerHTML += "<br/>";
 	}
 
 	window.scrollTo(0, document.body.scrollHeight);
 };
 
-KONSOLE.sys.ReadLine = function(msg, defaultValue) {
+KONSOLE.sys.readLine = function(msg, defaultValue) {
 	if(!defaultValue){ 
 		defaultValue = "";
 	}
 	
-	this.WriteLine(msg);
+	this.writeLine(msg);
 	if(typeof defaultValue == 'function') {
 		this.supressNext = true;
-		$(document).bind("lineRead", function(e, message) {
-			$(document).unbind("lineRead");
+		document.addEventListener("lineRead", function lineRead(e) {
+			var message = e.detail;
+
+			document.removeEventListener("lineRead", lineRead);
 			KONSOLE.sys.supressNext = false;
 			defaultValue(message);
 			KONSOLE.sys.clearInput();
@@ -79,17 +88,17 @@ KONSOLE.sys.ReadLine = function(msg, defaultValue) {
 	else {
 		var response = prompt(msg, defaultValue).toLowerCase();
 		if(response) {
-			this.WriteLine("> " + response);
+			this.writeLine("> " + response);
 		}
 		return response;
 	}
 };
 
 KONSOLE.sys.clearInput = function() {
-	KONSOLE.sys.command = $('pre.inputText')[0].innerText = "";
+	KONSOLE.sys.command = $('pre.inputText').innerText = "";
 };
 
-KONSOLE.sys.Exec = function(command) {
+KONSOLE.sys.exec = function(command) {
 	var argumentArray = command.split(' '),
 		commandToExec = {
 			command: argumentArray[0].toLowerCase(),
@@ -101,31 +110,30 @@ KONSOLE.sys.Exec = function(command) {
 	this.commandHistory.push(commandToExec.command + " " + commandToExec.args.join(' '));
 	this.curCommand = this.commandHistory.length;
 	if(this.command) {
-		this.WriteLine($('span.loginName')[0].innerText + this.command);
+		this.writeLine($('span.loginName').innerText + this.command);
 	}
 
 	if(commandPlugin) {
 		try{
 			toReturn = new commandPlugin(commandToExec.args);
 		} catch (ex) {
-			sys.WriteLine(ex.message, "warning");
+			sys.writeLine(ex.message, "error");
 		}
 	}
 	else {
 		try {
 			eval(sys.command);
 		} catch (ex) {
-			sys.WriteLine("'" + sys.command + "' is not recognised as an internal or external command,");
-			sys.WriteLine("operable program or Javascript file.");
-			sys.WriteLine();
+			sys.writeLine("'" + sys.command + "' is not recognised as an internal or external command,");
+			sys.writeLine("operable program or Javascript file.", true);
 		}
 	}
 	sys.clearInput();
-	sys.MoveCursor(0);
+	sys.moveCursor(0);
 	return toReturn;
 };
 
-KONSOLE.sys.MoveCursor = function(places) {
+KONSOLE.sys.moveCursor = function(places) {
 	var sys = KONSOLE.sys;
 	var result = sys.curPos + places;
 	if(result > sys.command.length)
@@ -149,44 +157,48 @@ KONSOLE.sys.toggleBlinker = function() {
 	}
 };
 
-KONSOLE.namespace('sys.plugins.info', function() { 
+KONSOLE.sys.changeUser = function(newUser) {
+	$('span.loginName').innerText = 'C:\\Users\\' + newUser + '>';
+};
+
+KONSOLE.ns('sys.plugins.info', function() { 
 	var lib = this;
-	if(!this.WriteLine) {
+	if(!this.writeLine) {
 		lib = KONSOLE.sys;
 	}
-	lib.WriteLine("Microsoft Windows [Version 6.2.9200]");
-	lib.WriteLine("(c) 2012 Microsoft Corporation. All rights reserved.", true);
+	lib.writeLine("Microsoft Windows [Version 6.2.9200]");
+	lib.writeLine("(c) 2012 Microsoft Corporation. All rights reserved.", true);
 });
 
 KONSOLE.sys.plugins.title = function(title) {
-	$('title')[0].innerHTML = title.join(' ');
-	KONSOLE.sys.WriteLine();
+	$('title').innerHTML = title.join(' ');
+	KONSOLE.sys.writeLine();
 };
 
 KONSOLE.sys.plugins.cls = function () {
-	$('div.output')[0].innerHTML = "<br/>";
+	$('div.output').innerHTML = "<br/>";
 };
 
 KONSOLE.sys.plugins.help = function() {
 	var sys = KONSOLE.sys;
-	sys.WriteLine("For more information on a specific command, type HELP command-name");
+	sys.writeLine("For more information on a specific command, type HELP command-name");
 	for (var plugin in sys.plugins ) {
 		if(sys.plugins.hasOwnProperty(plugin)) {
-			sys.WriteLine(plugin.toUpperCase());
+			sys.writeLine(plugin.toUpperCase());
 		}
 	};
-	sys.WriteLine();
+	sys.writeLine();
 };
 
 KONSOLE.sys.plugins.test = function() {
-	KONSOLE.sys.ReadLine("I will write what you say next.", function(message) {
-		KONSOLE.sys.WriteLine(message, 'info', true);
+	KONSOLE.sys.readLine("I will write what you say next.", function(message) {
+		KONSOLE.sys.writeLine(message, 'info', true);
 	});
 };
 
 KONSOLE.sys.plugins.about = function() {
 	var sys = KONSOLE.sys;
-	sys.WriteLine(KONSOLE.info.toString(), true);
+	sys.writeLine(JSON.stringify(KONSOLE.info, null, "\t"), true);
 };
 
 KONSOLE.sys.plugins.exit = function() {
@@ -194,14 +206,18 @@ KONSOLE.sys.plugins.exit = function() {
 };
 
 (function() {
-	KONSOLE.sys.Exec("Info");
-	$(document).bind('commandEntered', function(e, message) {
+	KONSOLE.sys.exec("Info");
+	document.addEventListener('commandEntered', function(e) {
+		var message = e.detail;
+
 		if(KONSOLE.sys.supressNext == false) {
-			KONSOLE.sys.Exec(message);
+			KONSOLE.sys.exec(message);
 		}
 		else {
-			$(document).trigger('lineRead', message);
+			$.trigger(document, "lineRead", message);
 		}
 	});
-	console.log = KONSOLE.sys.WriteLine;
+	console.log = KONSOLE.sys.writeLine;
+	setInterval(KONSOLE.sys.toggleBlinker, 500);
+	KONSOLE.sys.changeUser("Offline-Temp")
 })();
