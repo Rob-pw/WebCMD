@@ -32,15 +32,9 @@ KONSOLE.ns('events.handlers', {
 	},
 	retrieveIP : function retrieveIP(json){
 		KONSOLE.client.IP = json.ip;
-		
+		KONSOLE.sys.changeUser(json.ip);
 	}
 });
-
-document.onload = function() {
-	$('span.loginName').innerText = 'C:\\Users\\' + KONSOLE.client.IP + '>';
-
-	setInterval(KONSOLE.sys.toggleBlinker, 500);
-};
 
 document.onkeypress = function(e) {
 	var input = $('pre.inputText'),
